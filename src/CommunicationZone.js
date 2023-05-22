@@ -74,13 +74,76 @@ const CommunicationZone = () => {
         history: [...stateRef.current.history, response],
       });
     } else if (stateRef.current.history.length >= 4) {
-      let response =
-        answersAdvanced[Math.floor(Math.random() * answersAdvanced.length)];
-      setState({
-        ...stateRef.current,
-        history: [...stateRef.current.history, response],
+      // let response =
+      //   answersAdvanced[Math.floor(Math.random() * answersAdvanced.length)];
+      // setState({
+      //   ...stateRef.current,
+      //   history: [...stateRef.current.history, response],
+      // });
+
+      var myHeaders = new Headers();
+      myHeaders.append("Content-Type", "application/json");
+
+      var raw = JSON.stringify({
+        "query": stateRef.current.disposable
       });
+
+      var requestOptions = {
+        method: 'POST',
+        headers: myHeaders,
+        body: raw
+      };
+
+      fetch("http://localhost:8000/query", requestOptions)
+        .then(response => response.text())
+        .then(result => {
+          let response = JSON.parse(result);
+          const { status, data } = response;
+
+          if (status === 400) {
+            setState({
+              ...stateRef.current,
+              history: [...stateRef.current.history, answersAdjust[0]],
+            });
+          } else if (status === 200) {
+            if (data.body) {
+              setState({
+                ...stateRef.current,
+                history: [...stateRef.current.history, parseTextFromMarkDown(String(data.body)).join(' ')],
+              });
+            } else {
+              setState({
+                ...stateRef.current,
+                history: [...stateRef.current.history, answersAdjust[0]],
+              });
+            }
+          } else {
+            let response = answersBasic[Math.floor(Math.random() * answersBasic.length)];
+            setState({
+              ...stateRef.current,
+              history: [...stateRef.current.history, response],
+            });
+          }
+        })
+        .catch(error => console.log('error', error));
     }
+  }
+
+  function parseTextFromMarkDown(stringInput) {
+    const htmlString = stringInput;
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlString, 'text/html');
+    const walker = document.createTreeWalker(doc, NodeFilter.SHOW_TEXT);
+
+    const textList = [];
+    let currentNode = walker.currentNode;
+
+    while (currentNode) {
+      textList.push(currentNode.textContent);
+      currentNode = walker.nextNode();
+    }
+
+    return textList;
   }
 
   function cleanHistory() {

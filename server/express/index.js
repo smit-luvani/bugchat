@@ -6,7 +6,7 @@ const pinoHttp = require('pino-http');
 
 module.exports = function main(options, cb) {
   // Set default options
-  const ready = cb || function () {};
+  const ready = cb || function () { };
   const opts = Object.assign(
     {
       // Default options
@@ -49,6 +49,8 @@ module.exports = function main(options, cb) {
   // app.use(/* ... */)
   app.use(pinoHttp({ logger }));
   app.use(cors());
+
+  app.use(express.json(), express.urlencoded({ extended: true }));
 
   // Register routes
   // @NOTE: require here because this ensures that even syntax errors
